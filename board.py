@@ -4,6 +4,7 @@ from .Pieces.knight import Knight
 from .Pieces.queen import Queen
 from .Pieces.king import King
 from .Pieces.pawn import Pawn
+from .Pieces.blank import Blank
 
 from .helpers import *
 
@@ -44,6 +45,8 @@ class Board:
         return ret
 
     def get_piece(self, row: int, col: int) -> Piece:
+        if not self.inbound(Position(row, col)):
+            return None
         return self.board[row][col]
 
     def set_square(self, row: int, col: int, piece) -> None:
@@ -84,4 +87,11 @@ class Board:
 
         return inbetween_squares_list
 
+    def row_size(self):
+        return len(self.board)
 
+    def col_size(self):
+        return len(self.board[0])
+
+    def delete_square(self, row, col):
+        self.board[row][col] = Blank(None)

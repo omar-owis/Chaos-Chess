@@ -8,7 +8,7 @@ from .game_engine import GameEngine
 def position_to_pixels(row: int, col: int):
     pass
 
-class GUI:
+class BoardGUI:
     _SCREEN_WIDTH = 640
     _SCREEN_HEIGHT = 640
     _PIECE_SIZE = (_SCREEN_HEIGHT/8, _SCREEN_WIDTH/8)

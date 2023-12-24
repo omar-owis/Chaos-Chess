@@ -3,11 +3,22 @@ from .helpers import *
 from .data_classes import *
 
 # TODO: Pawn Promotions
-# TODO: Squares deletions: on each move there is a chance that board losses (1-3) clustered squares
+# TODO: Add timers
+# TODO: Squares deletions: chance that board losses (1-3) clustered squares
 # TODO: Dynamic board, every set number of turns the board will increase in rows or columns
 # TODO: Code Optimizations
 # TODO: a whole lotta refactoring
+
+# Square Deletions: can occur at any moment (not turn-based), chance of deletion is dependent on the sum of time for
+# both players (lower the sum, the higher the chance of occurrence threshold based), if hole spawned under piece push back
+# towards piece's base, window should have a literal hole in it to display what ever is behind the game window
+# threshold based system: when sum drops below 5 minutes chance is 10% + some formula based on time. When sum drops below
+# 3 minutes chance is 30% + same formula, so on. Tweak thresholds and formula for best gameplay
+# Row and Column additions: new row/column is added to the board from the outer edges, new row/column is pushed in to
+# the middle, adding new row or column increases window size accordingly
 class GameEngine:
+    # TODO(bugfix): white king dont see pawn checks
+    # TODO(bugfix): black playing an illegal move while in check crashes client
     def __init__(self):
         self.board = Board()
         self.turn = WHITE
@@ -34,22 +45,7 @@ class GameEngine:
         pinned_direction = self._extract_pinned_direction(piece)
 
         if isinstance(piece, Pawn):
-            # left square of pawn
-            left_dir = UP_LEFT if piece.color is WHITE else DOWN_LEFT
-            left = Position(row, col) + left_dir
-            left_capture = (left.col >= 0 and
-                            ((self.board.get_piece(left.row, left.col) is not None and
-                            self.board.get_piece(left.row, left.col).color != piece.color)
-                            or left == self.en_passant_square))
-
-            # right square of pawn
-            right_dir =  UP_RIGHT if piece.color is WHITE else DOWN_RIGHT
-            right = Position(row, col) + right_dir
-            right_capture = (right.col < 8 and
-                             ((self.board.get_piece(right.row, right.col) is not None and
-                             self.board.get_piece(right.row, right.col).color != piece.color)
-                             or right == self.en_passant_square))
-
+            left_capture, right_capture = self._evaluate_pawn_captures(piece, row, col)
             up = 1 if piece.color is WHITE else -1
             up_square = self.board.get_piece(row+up, col) is None
             two_up_square = self.board.get_piece(row+2*up, col) is None
@@ -89,7 +85,7 @@ class GameEngine:
             other = self.board.get_piece(position.row, position.col)
 
             if isinstance(piece, King):
-                if not self._is_square_attacked(position, piece.color, True) and (other is None
+                if not self._is_square_attacked(position, piece.color, ignore_king=True) and (other is None
                 or other.color is not piece.color):
                     moves.append(position)
             else:
@@ -150,6 +146,7 @@ class GameEngine:
         self.history.append(Move(piece, Position(start_row,start_col), Position(end_row, end_col)))
         self.board.set_square(start_row, start_col, None)
         self.board.set_square(end_row, end_col, piece)
+        self._try_promote_pawn(end_row, end_col, piece, Queen(piece.color))
 
         other = BLACK if turn is WHITE else WHITE
 
@@ -330,3 +327,29 @@ class GameEngine:
                 if piece == pinned.piece:
                     return pinned.direction
         return None
+
+    def _evaluate_pawn_captures(self, piece, row, col):
+        # left square of pawn
+        left_dir = UP_LEFT if piece.color is WHITE else DOWN_LEFT
+        left = Position(row, col) + left_dir
+        left_capture = (left.col >= 0 and
+                        ((self.board.get_piece(left.row, left.col) is not None and
+                          self.board.get_piece(left.row, left.col).color != piece.color)
+                         or left == self.en_passant_square))
+
+        # right square of pawn
+        right_dir = UP_RIGHT if piece.color is WHITE else DOWN_RIGHT
+        right = Position(row, col) + right_dir
+        right_capture = (right.col < self.board.col_size() and
+                         ((self.board.get_piece(right.row, right.col) is not None and
+                           self.board.get_piece(right.row, right.col).color != piece.color)
+                          or right == self.en_passant_square))
+        return left_capture, right_capture
+
+    def _try_promote_pawn(self, row, col, piece, promotion_piece):
+        if not isinstance(piece, Pawn):
+            return
+
+        promote_row = self.board.col_size()-1 if piece.color is WHITE else 0
+        if row == promote_row:
+            self.board.set_square(row, col, promotion_piece)

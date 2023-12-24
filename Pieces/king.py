@@ -6,7 +6,6 @@ from .piece import *
 class King(Piece):
     def __init__(self, color):
         super().__init__(color)
-        self.moved = False
         self.capture_directions = [LEFT, RIGHT, UP, DOWN, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT]
         self.extend_direction = False
         self.image = pygame.image.load(os.path.join(os.path.dirname(__file__),"graphics/white-king.png"))\

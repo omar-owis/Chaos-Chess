@@ -1,6 +1,6 @@
-from .GUI import GUI
+from .board_GUI import BoardGUI
 
 
 if __name__ == "__main__":
-    gui = GUI()
+    gui = BoardGUI()
     gui.run()
