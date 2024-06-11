@@ -10,6 +10,29 @@ from .helpers import *
 
 from .data_classes import *
 
+
+def convert_piece_to_char(piece: 'Piece') -> str:
+    result = ''
+    match piece:
+        case King():
+            result = 'k'
+        case Knight():
+            result = 'n'
+        case Bishop():
+            result = 'b'
+        case Rook():
+            result = 'r'
+        case Queen():
+            result = 'q'
+        case Pawn():
+            result = 'p'
+
+    if piece.color is WHITE:
+        result = result.upper()
+
+    return result
+
+
 class Board:
     def __init__(self):
         self.board = [[Rook(WHITE), Knight(WHITE), Bishop(WHITE), King(WHITE),
@@ -95,3 +118,22 @@ class Board:
 
     def delete_square(self, row, col):
         self.board[row][col] = Blank(None)
+
+    def to_static_fen(self) -> str:
+        counter = 0
+        result = ''
+        for row in self.board:
+            for tile in row:
+                if not tile:
+                    counter += 1
+                else:
+                    if counter > 0:
+                        result += str(counter)
+                        counter = 0
+                    result += convert_piece_to_char(tile)
+            if counter > 0:
+                result += str(counter)
+                counter = 0
+            result += '/'
+
+        return (result[:-1])[::-1]

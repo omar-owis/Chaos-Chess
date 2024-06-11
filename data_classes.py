@@ -51,6 +51,7 @@ class Move:
     piece: Piece
     start_pos: Position
     end_pos: Position
+    nested_move: 'Move'
 
 @dataclass
 class PinnedPiece:
