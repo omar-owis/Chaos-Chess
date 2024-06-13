@@ -4,8 +4,6 @@ from .data_classes import *
 
 import math
 
-# TODO: Add Checkmate
-# TODO: Add Stalemates
 # TODO: Add Draw by repetition
 # TODO: Add timers
 # TODO: Squares deletions: chance that board losses (1-3) clustered squares
@@ -35,8 +33,6 @@ class GameEngine:
         piece = self.board.get_piece(row, col)
         if piece is None:
             return []
-
-        self._evaluate_checks_and_pins(piece.color)
 
         block_squares = []
         if len(self.check_source) > 1 and not isinstance(piece, King):
@@ -171,6 +167,7 @@ class GameEngine:
             self._try_castling_rook(piece.color, start_col - end_col)
 
         self._change_turn()
+        self._evaluate_checks_and_pins(self.turn)
         return True
 
     def _change_turn(self):
@@ -235,6 +232,7 @@ class GameEngine:
         enemy colors
         :param pos: Position
         :param color: rgb
+        :param ignore_king: ignores king with given color in search
         :return: Boolean
         """
         for direction in ALL_DIRECTIONS:
@@ -496,3 +494,36 @@ class GameEngine:
         return self.board.to_static_fen() + " " + color_char \
                + " " + white_castling + black_castling + " " + en_passant_tile + " " + str(half_move_num) \
                + " " + str(full_move_num)
+
+    def is_checkmate(self) -> bool:
+        if len(self.check_source) == 0:
+            return False
+
+        for row in range(self.board.row_size()):
+            for col in range(self.board.col_size()):
+                if (square := self.board.get_piece(row, col)) is None or square.color is not self.turn:
+                    continue
+                if self.possible_moves(row, col):
+                    return False
+
+        return True
+
+    def is_stalemate(self) -> bool:
+        if len(self.check_source) > 0:
+            return False
+
+        king = self.board.white_king if self.turn is WHITE else self.board.black_king
+
+        if self.possible_moves(king.row, king.col):
+            return False
+
+        for row in range(self.board.row_size()):
+            for col in range(self.board.col_size()):
+                if (square := self.board.get_piece(row, col)) is None or square.color is not self.turn\
+                        or square is king:
+                    continue
+                if self.possible_moves(row, col):
+                    return False
+
+        return True
+

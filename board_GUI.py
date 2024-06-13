@@ -35,9 +35,12 @@ class BoardGUI:
         self.selected_square = ()
         self._promotion_rects = []
         self.promotion_options_active = False
+        self._font = None
+        self._end_text = None
 
     def start(self):
         pygame.init()
+        self._font = pygame.font.Font('freesansbold.ttf', 32)
 
     def _draw_squares(self):
         x_pixel_increment = self._SCREEN_WIDTH / 8
@@ -128,6 +131,11 @@ class BoardGUI:
                     elif self.selected_square:
                         if self.game.play(self.selected_square[0], self.selected_square[1], y, x, self.player_color):
                             self.player_color = BLACK if self.player_color is WHITE else WHITE
+                            if self.game.is_checkmate():
+                                other = 'Black' if self.player_color is BLACK else 'White'
+                                self._end_text = self._font.render(f'{other} wins!', True, PURPLE)
+                            elif self.game.is_stalemate():
+                                self._end_text = self._font.render('Draw by stalemate', True, PURPLE)
                         self.selected_square = ()
                     print("col: " + str(math.ceil(mouse_pos[0] / (self._SCREEN_WIDTH / 8))) +
                           " row: " + str(math.ceil(mouse_pos[1] / (self._SCREEN_HEIGHT / 8))))
@@ -149,6 +157,10 @@ class BoardGUI:
                 if self.promotion_options_active:
                     previous_color = BLACK if self.player_color is WHITE else WHITE
                     self._draw_promotion_options(x, y, previous_color)
+                if self._end_text:
+                    textRect = self._end_text.get_rect()
+                    textRect.center = (self._SCREEN_WIDTH // 2, self._SCREEN_HEIGHT // 2)
+                    self.screen.blit(self._end_text, textRect)
 
                 # flip() the display to put your work on screen
                 pygame.display.flip()
